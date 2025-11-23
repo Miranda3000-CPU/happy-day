@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parabéns do DeLorean</title>
+  <style>
+    :root { font-size: 16px; }
+    body {
+      margin: 0;
+      background: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    #content {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .gif {
+      max-width: 20rem;
+    }
+    /* Apresentação do projeto */
+    #presentation {
+      display: none;
+      color: white;
+      background: #7e7c7c;
+      padding: 2rem;
+      border-radius: 0.5rem;
+    }
+    #presentation h1, #presentation p {
+      margin: 1rem 0;
+    }
+    /* Seção de animação e mensagem */
+    #animation-section {
+      display: none;
+    }
+    #animation {
+      position: relative;
+    }
+    #delorean {
+      display: block;
+      margin: auto;
+    }
+    #message-container {
+      display: none;
+      margin-top: 1rem;
+    }
+    #message-container h1, #message-container p {
+      margin: 0.5rem 0;
+    }
+    /* O ghost ficará abaixo da mensagem */
+    #ghost-delorean {
+      display: none;
+      margin-top: 2rem;
+    }
+    .flash {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: white;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+    }
+  </style>
+  <!-- Substitua a CDN atual por esta -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <div id="content">
+    <!-- Apresentação do projeto -->
+    <div id="presentation">
+      <h1>DeLorean Birthday!</h1>
+      <p>Uma experiência única de felicitações inspirada no icônico DeLorean do filme "De Volta para o Futuro".</p>
+      
+      <h1>Como Usar?</h1>
+      <p>É simples! Basta criar um link com seus parâmetros:</p>
+      
+      <div style="background: black; padding: 1rem; border-radius: 0.5rem; text-align: left;">
+        <p style="font-family: monospace; word-break: break-all;">
+          https://happy-delorean/index.html?<br>
+          nome=Jeiel<br>
+          &titulo=Feliz Aniversário Jeiel!<br>
+          &mensagem=Tenha um dia incrível!
+        </p>
+        <p>Sempre após o parâmentro, insira "&".</p>
+      </div>
+
+      <h1>Parâmetros:</h1>
+      <ul style="list-style: none; padding: 0;">
+        <li>🎯 nome: Nome do aniversariante</li>
+        <li>📝 titulo: Título da mensagem</li>
+        <li>💌 mensagem: Sua mensagem especial</li>
+      </ul>
+
+      <p style="color: gold; font-size: 0.9rem;">
+        Dica: Use %20 para espaços na URL
+      </p>
+      <br></p>
+      <hr>
+      <p>Fundado por Jeiel Miranda</p>
+      <img src="the-delorean.gif" class="gif" alt="The DeLorean">
+    </div>
+    <!-- Seção de animação e mensagem de parabéns -->
+    <div id="animation-section">
+      <div id="animation">
+        <img id="delorean" class="gif" src="delorean.gif" alt="DeLorean">
+      </div>
+      <div id="message-container">
+        <h1 id="title"></h1>
+        <p id="message"></p>
+        <img id="ghost-delorean" class="gif" src="ghost-delorean.gif" alt="Ghost DeLorean">
+      </div>
+    </div>
+    <div class="flash" id="flash"></div>
+  </div>
+  <!-- Áudios: um para o delorean.gif e outro para o ghost-delorean.gif -->
+  <audio id="soundDelorean" src="delorean.mp3"></audio>
+  <audio id="soundGhost" src="the-delorean.mp3"></audio>
+  <script>
+    function getParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        nome: params.get('nome'),
+        titulo: params.get('titulo'),
+        mensagem: params.get('mensagem')
+      };
+    }
+
+    async function requestAudioPermission() {
+      try {
+        const result = await Swal.fire({
+          title: 'Ativar som?',
+          text: 'Esta experiência inclui efeitos sonoros. Deseja ativá-los?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Sim',
+          cancelButtonText: 'Não'
+        });
+        return result.isConfirmed;
+      } catch (error) {
+        console.error('Erro ao solicitar permissão:', error);
+        return false;
+      }
+    }
+
+    async function loadData() {
+      const params = getParams();
+      if (!params.nome || !params.titulo || !params.mensagem) {
+        document.getElementById('presentation').style.display = 'block';
+        return;
+      }
+      
+      const hasAudioPermission = await requestAudioPermission();
+      startAnimation(params, hasAudioPermission);
+    }
+
+    function startAnimation({ nome, titulo, mensagem }, audioEnabled) {
+      // Exibe a seção de animação
+      document.getElementById('animation-section').style.display = 'block';
+      const delorean = document.getElementById('delorean');
+      const messageContainer = document.getElementById('message-container');
+      const title = document.getElementById('title');
+      const message = document.getElementById('message');
+      const ghostDelorean = document.getElementById('ghost-delorean');
+      const flash = document.getElementById('flash');
+      const soundDelorean = document.getElementById('soundDelorean');
+      const soundGhost = document.getElementById('soundGhost');
+      
+      if (audioEnabled) {
+        soundDelorean.play();
+      }
+      
+      // Após 2 segundos, anima o delorean (movendo-o para a direita)
+      setTimeout(() => {
+        delorean.style.transition = 'transform 2s ease-in-out';
+        delorean.style.transform = 'translateX(100vw)';
+      }, 2000);
+      
+      // Após 4 segundos (2 segundos para iniciar + 2 segundos para a animação), executa o flash, oculta o delorean e exibe a mensagem
+      setTimeout(() => {
+        flash.style.opacity = 1;
+        setTimeout(() => {
+          flash.style.opacity = 0;
+          // Oculta a animação do delorean
+          document.getElementById('animation').style.display = 'none';
+          // Configura a mensagem de parabéns
+          title.textContent = titulo;
+          message.textContent = `${nome}, ${mensagem}`;
+          messageContainer.style.display = 'block';
+          // Exibe o ghost-delorean abaixo da mensagem
+          ghostDelorean.style.display = 'block';
+          
+          if (audioEnabled) {
+            soundGhost.play();
+          }
+          
+          // Lança os confetes imediatamente após a mensagem
+          const end = Date.now() + (3 * 1000); // duração de 3 segundos
+
+          // Cria uma animação de confetes em intervalo
+          const interval = setInterval(function() {
+            if (Date.now() > end) {
+              return clearInterval(interval);
+            }
+
+            confetti({
+              particleCount: 50,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+            });
+          }, 250);
+        }, 200);
+      }, 4000);
+    }
+    window.onload = loadData;
+  </script>
+   </script>
+   <!-- Vercel Analytics -->
+   <script>
+     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+   </script>
+   <script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
